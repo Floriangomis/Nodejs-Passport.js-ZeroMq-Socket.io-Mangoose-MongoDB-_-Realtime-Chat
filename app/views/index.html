@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title> Test Node </title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            .container-users {
+                border: 1px solid black;
+                border-radius: 20px;
+                width: 18%;
+                float: left;
+            }
+
+            .container-users ul {
+                list-style: none;
+            }
+
+            .message-container {
+                width: 80%;
+                height: 80vh;
+                overflow-y: scroll;
+                float: left;
+            }
+            .ask-name-container {
+                display: block;
+            }
+            .hide {
+                display: none !important;
+            }
+            .clear {
+                clear: both;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="connection-spinner hide">
+            Loading
+        </div>
+        <div class="ask-name-container">
+            Type a login and password to register : <input type="text" class="input-login" name="username" value=""> <input type="password" class="input-password" name="password" value="">
+            <input type="button" value="Send" onclick="register()">
+            <br>
+             Type your login and password to login : <input type="text" class="input-login2" name="username" value=""> <input type="password" class="input-password2" name="password" value="">
+            <input type="button" value="Send" onclick="log()">
+            <br>
+            <span class="message-back hide" style="color: red;"> </span>
+        </div>
+        
+        <div class="message-container hide">
+
+        </div>
+        <div class="container-users hide">
+            <ul>
+                
+            </ul>
+        </div>
+        <div class="clear"></div>
+        <div class="is-typing">
+
+        </div>
+        <div class="message-input-container hide">
+            <input type="text" class="message-input">
+            <input type="button" value="send" onclick="sendMessage()">
+        </div>
+    
+    <script src="socket.io-client/dist/socket.io.js"></script>
+    <script>
+        import * as config from '.config.js';
+
+        var session_user = {};
+        // All element we need later on
+        var nameBoxContainer = document.querySelector('.ask-name-container');
+        var inputLogin = document.querySelector('.input-login');
+        var inputPassword = document.querySelector('.input-password');
+        var inputLogin2 = document.querySelector('.input-login2');
+        var inputPassword2 = document.querySelector('.input-password2');
+        var messageContainer = document.querySelector('.message-container');
+        var inputMessageContainer = document.querySelector('.message-input-container');
+        var inputMessage = document.querySelector('.message-input');
+        var containerUsers = document.querySelector('.container-users');
+        var ul = document.querySelector('.container-users ul');
+        var connectionSpinner = document.querySelector('.connection-spinner');
+        var isTypingContainer = document.querySelector('.is-typing');
+        var messageBackLoginRegister = document.querySelector('.message-back');
+
+        var typingTimer;                
+        var doneTypingInterval = 2000;
+
+        // Instance of Socket.io
+        var socket = io();
+
+        function receiveListUsers(listOfUsers) {
+            containerUsers.classList.remove('hide');
+            ul.innerHTML = '';
+            var docfrag = document.createDocumentFragment();
+            for (var index = 0; index < listOfUsers.length; index++) {
+                var li = document.createElement('li');
+                li.innerHTML = listOfUsers[index].name;
+                docfrag.appendChild(li);            
+            }
+            ul.appendChild(docfrag);
+        }
+
+        function register() {
+            fetch('http://' + config.webserverIpServer + ':3000/register', {
+                method: 'post',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: inputLogin.value,
+                    password: inputPassword.value
+                })
+            })
+            .then( value => {
+                if(value.status !== 200){
+                    messageBackLoginRegister.classList.remove('hide');
+                    messageBackLoginRegister.innerHTML = 'error to register';
+                }
+                else {
+                    // TODO
+                }
+            });
+        }
+
+        function log() {
+            fetch('http://' + config.webserverIpServer + ':3000/log', {
+                method: 'post',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: inputLogin2.value,
+                    password: inputPassword2.value
+                })
+            })
+            .then( value => {
+                if(value.status !== 200){
+                    messageBackLoginRegister.classList.remove('hide');
+                    messageBackLoginRegister.innerHTML = 'error to login';
+                }
+                else {
+                    value.json().then( (value) => {
+                        session_user = value;
+                        socket.emit('send-name', session_user);
+                    })
+                }
+            });
+        }
+
+
+        function sendMessage() {
+            clearTimeout(typingTimer);
+            doneTyping();
+            socket.emit('client-message-server' ,inputMessage.value);
+            inputMessage.value = '';
+        }
+
+        function displayMessage(data) {
+            var divMessage = document.createElement('div');
+            divMessage.innerHTML = '['+data.time+']'+data.postedBy.username+' : '+data.message;
+            messageContainer.append(divMessage);
+
+            var br = document.createElement('br');
+            messageContainer.appendChild(br);
+            
+            // scroll to the bottom
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        function displayInputName() {
+            nameBoxContainer.classList.remove('hide');
+            connectionSpinner.classList.add('hide');
+            inputMessageContainer.classList.add('hide');
+            messageContainer.classList.add('hide');
+        }
+
+        function displayChat() {
+            nameBoxContainer.classList.add('hide');
+            connectionSpinner.classList.add('hide');
+            inputMessageContainer.classList.remove('hide');
+            messageContainer.classList.remove('hide');
+            // scroll to the bottom
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        function displayLoadingConnection() {
+            nameBoxContainer.classList.add('hide');
+            connectionSpinner.classList.remove('hide');
+        }
+
+        function displayUserTyping( user ) {
+            if( !isTypingContainer.querySelector('[id="'+user.id+'"]') ) {
+                let spanText = document.createElement('span');
+                spanText.setAttribute('id', user.id);
+                spanText.innerHTML = user.name + ' is typing';
+                isTypingContainer.appendChild(spanText);
+            } else {
+                return;
+            }
+        }
+
+        //on keyup, start the countdown
+        inputMessage.addEventListener('keyup', function () {
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(doneTyping, doneTypingInterval);
+        });
+
+        //on keydown, clear the countdown 
+        inputMessage.addEventListener('keydown', function () {
+            socket.emit('user-is-typing', {});
+            clearTimeout(typingTimer);
+        });
+
+        //user is "finished typing," do something
+        function doneTyping () {
+            socket.emit('user-stop-typing', {});
+        }
+
+
+        function removeUserNotTypingAnymore( user ) {
+            isTypingContainer.querySelector('[id="'+user.id+'"]').remove();
+        };
+
+        socket.on('user-started-typing-to-client',function(user){
+            displayUserTyping(user);
+	    });
+        socket.on('user-finished-typing-to-client',function(user){
+            removeUserNotTypingAnymore(user);
+        });
+
+        function fillThreadWithHistory(data) {
+            //remove all children
+            while (messageContainer.firstChild) {
+                messageContainer.removeChild(messageContainer.firstChild);
+            }
+            for (var index = data.history.length-1; index >= 0; index--) {
+                displayMessage(data.history[index]);
+            }
+        };
+
+        socket.on('user-is-typing', displayUserTyping);
+        socket.on('name-correct', displayChat);
+        socket.on('name-already-taken', displayInputName)
+        socket.on('update-client-list', receiveListUsers);
+        socket.on('server-msg-client', displayMessage);
+        socket.on('retrieve-history', fillThreadWithHistory);
+    </script>
+        
+    </body>
+</html>
