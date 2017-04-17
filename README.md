@@ -4,7 +4,7 @@ I started this app to start to play with Node.js / Socket.io and ZeroMQ initiall
 
 I Then started to use also Passport.js/ MongoDB and Mongoose.
 
-#Requirement
+# Requirement
 
 You need to have MongoDB installed on your machine in order to try it locally.
 You also need to have NodeJS installed ( Npm ).
@@ -24,7 +24,7 @@ $ npm install
 $ npm run start
 ```
 
-And here we are you can now access the chat via localhost:3000
+And here we are ! You can now access the chat via localhost:3000
 
 Keep in mind that currently the front-end is really trivial. The purpose of this project was to use Nodejs.
 

@@ -65,8 +65,8 @@
         </div>
     
     <script src="socket.io-client/dist/socket.io.js"></script>
+    <script src="config.js"></script>
     <script>
-        import * as config from '.config.js';
 
         var session_user = {};
         // All element we need later on
@@ -103,7 +103,7 @@
         }
 
         function register() {
-            fetch('http://' + config.webserverIpServer + ':3000/register', {
+            fetch('http://' + config.ConfigObject.webserverIpServer + ':3000/register', {
                 method: 'post',
                 mode: 'cors',
                 headers: {
@@ -126,7 +126,7 @@
         }
 
         function log() {
-            fetch('http://' + config.webserverIpServer + ':3000/log', {
+            fetch('http://' + config.ConfigObject.webserverIpServer + ':3000/log', {
                 method: 'post',
                 mode: 'cors',
                 headers: {

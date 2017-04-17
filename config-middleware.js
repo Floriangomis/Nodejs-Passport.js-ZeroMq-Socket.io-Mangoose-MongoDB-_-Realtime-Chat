@@ -21,6 +21,7 @@ module.exports = (app, config) => {
 
     app.use(express.static('public'));
     app.use(express.static('node_modules'));
+    app.use(express.static('./'));
     
     app.set('view engine', 'html');
     app.engine('html', ejs.renderFile);

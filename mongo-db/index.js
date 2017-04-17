@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'),
       config = require('../config.js'),
-      url = 'mongodb://' + config.ipServerMongoDb;
+      url = 'mongodb://' + config.ConfigObject.ipServerMongoDb;
       User = require('../models/models.js').User,
       Message = require('../models/models.js').Message,
       passport = require('passport');
